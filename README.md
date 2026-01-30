@@ -1937,10 +1937,34 @@
                 }
             } else {
                 DYNAMIC_USER_DATABASE = [];
+                // Добавляем тестовых пользователей, если база пуста
+                addTestUsers();
             }
             
             // Сохраняем текущее состояние базы в localStorage для синхронизации
             localStorage.setItem('dynamicUserDatabase', JSON.stringify(DYNAMIC_USER_DATABASE));
+        }
+
+        function addTestUsers() {
+            // Добавляем тестовых пользователей, если база пуста
+            const testUsers = [
+                {
+                    "id": "user_1769791129815_vi305kte3",
+                    "username": "Legenda",
+                    "password": "11111",
+                    "name": "Dimon",
+                    "isAdmin": false,
+                    "createdBy": "admin",
+                    "creationDate": "2026-01-30T16:38:49.815Z"
+                }
+                // Добавляем нового пользователя прямо в код
+               
+            ];
+            
+            DYNAMIC_USER_DATABASE.push(...testUsers);
+            saveDynamicUserDatabase();
+            
+            console.log('Добавлены тестовые пользователи:', testUsers.length);
         }
 
         function saveDynamicUserDatabase() {
@@ -1975,6 +1999,8 @@
             }
             return false;
         }
+
+
 
         // ==================== АВТОМАТИЧЕСКОЕ ОБНОВЛЕНИЕ ДАННЫХ ====================
         let lastUpdateTime = Date.now();
