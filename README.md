@@ -1,7 +1,7 @@
 
 <html lang="ru">
 <head>
-   <meta charset="UTF-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The BIG guy v0.1</title>
     <style>
@@ -1205,8 +1205,8 @@
             }
         }
     </style>
-    </head>
-    <body>
+</head>
+<body>
     <!-- Модальное окно входа -->
     <div class="auth-modal" id="auth-modal">
         <div class="auth-form">
@@ -1781,23 +1781,7 @@
         ];
 
         // Динамическая база пользователей, которая будет загружаться и обновляться
-        let DYNAMIC_USER_DATABASE = [
-        const DYNAMIC_USER_DATABASE = [
-    {
-    "id": "user_1769791129815_vi305kte3",
-    "username": "Legenda",
-    "password": "11111",
-    "name": "Dimon",
-    "isAdmin": false,
-    "createdBy": "admin",
-    "creationDate": "2026-01-30T16:38:49.815Z"
-     }
-    ];
-
-    // Объединенная база пользователей для аутентификации
-    function getAllUsersForAuth() {
-    return [...PRESET_ACCOUNTS, ...DYNAMIC_USER_DATABASE];
-    }  ];
+        let DYNAMIC_USER_DATABASE = [];
 
         // ==================== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ====================
         let currentUser = null;
@@ -3342,12 +3326,12 @@
             
             // Также сохраняем в формате JavaScript для вставки в код
             const jsCode = `// Динамическая база пользователей (автоматически обновляется)
-    const DYNAMIC_USER_DATABASE = ${JSON.stringify(DYNAMIC_USER_DATABASE, null, 2)};
+const DYNAMIC_USER_DATABASE = ${JSON.stringify(DYNAMIC_USER_DATABASE, null, 2)};
 
-     // Объединенная база пользователей для аутентификации
-     function getAllUsersForAuth() {
+// Объединенная база пользователей для аутентификации
+function getAllUsersForAuth() {
     return [...PRESET_ACCOUNTS, ...DYNAMIC_USER_DATABASE];
-    }`;
+}`;
             
             localStorage.setItem('userDatabaseCode', jsCode);
         }
