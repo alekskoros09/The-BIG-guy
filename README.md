@@ -1,7 +1,7 @@
 
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
+   <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The BIG guy v0.1</title>
     <style>
@@ -3342,12 +3342,12 @@
             
             // Также сохраняем в формате JavaScript для вставки в код
             const jsCode = `// Динамическая база пользователей (автоматически обновляется)
-const DYNAMIC_USER_DATABASE = ${JSON.stringify(DYNAMIC_USER_DATABASE, null, 2)};
+    const DYNAMIC_USER_DATABASE = ${JSON.stringify(DYNAMIC_USER_DATABASE, null, 2)};
 
-// Объединенная база пользователей для аутентификации
-function getAllUsersForAuth() {
+     // Объединенная база пользователей для аутентификации
+     function getAllUsersForAuth() {
     return [...PRESET_ACCOUNTS, ...DYNAMIC_USER_DATABASE];
-}`;
+    }`;
             
             localStorage.setItem('userDatabaseCode', jsCode);
         }
