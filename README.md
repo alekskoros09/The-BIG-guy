@@ -4090,5 +4090,5 @@
             document.getElementById('history-details').classList.add('hidden');
         };
     </script>
-</body>
-</html>
+     </body>
+     </html>
