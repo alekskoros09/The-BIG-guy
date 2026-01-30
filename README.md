@@ -1781,7 +1781,23 @@
         ];
 
         // Динамическая база пользователей, которая будет загружаться и обновляться
-        let DYNAMIC_USER_DATABASE = [];
+        let DYNAMIC_USER_DATABASE = [
+        const DYNAMIC_USER_DATABASE = [
+    {
+    "id": "user_1769791129815_vi305kte3",
+    "username": "Legenda",
+    "password": "11111",
+    "name": "Dimon",
+    "isAdmin": false,
+    "createdBy": "admin",
+    "creationDate": "2026-01-30T16:38:49.815Z"
+     }
+    ];
+
+    // Объединенная база пользователей для аутентификации
+    function getAllUsersForAuth() {
+    return [...PRESET_ACCOUNTS, ...DYNAMIC_USER_DATABASE];
+    }  ];
 
         // ==================== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ====================
         let currentUser = null;
