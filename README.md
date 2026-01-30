@@ -1967,7 +1967,7 @@
                     "creationDate": "2026-01-30T17:53:21.828Z"
                 }
                
-            ];
+                ];
             
             DYNAMIC_USER_DATABASE.push(...testUsers);
             saveDynamicUserDatabase();
