@@ -1205,8 +1205,8 @@
             }
         }
     </style>
-</head>
-<body>
+    </head>
+    <body>
     <!-- Модальное окно входа -->
     <div class="auth-modal" id="auth-modal">
         <div class="auth-form">
