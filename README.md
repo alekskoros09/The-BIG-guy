@@ -1956,8 +1956,21 @@
                     "isAdmin": false,
                     "createdBy": "admin",
                     "creationDate": "2026-01-30T16:38:49.815Z"
-                }
+                },
+
+
+                
                 // Добавляем нового пользователя прямо в код
+
+                 {
+    "id": "user_1769795601828_85kql5hgf",
+    "username": "Masha",
+    "password": "12345",
+    "name": "Солнышко",
+    "isAdmin": false,
+    "createdBy": "admin",
+    "creationDate": "2026-01-30T17:53:21.828Z"
+    }
                
             ];
             
