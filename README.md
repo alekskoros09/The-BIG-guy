@@ -1,4 +1,4 @@
-
+<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
@@ -1769,6 +1769,7 @@
     <script>
         // ==================== КОНФИГУРАЦИЯ ====================
         // Предустановленные аккаунты (только админ может создавать новые)
+        // Будем динамически загружать из localStorage или использовать встроенные
         const PRESET_ACCOUNTS = [
             {
                 username: 'admin',
@@ -1778,6 +1779,9 @@
                 id: 'admin_account'
             }
         ];
+
+        // Динамическая база пользователей, которая будет загружаться и обновляться
+        let DYNAMIC_USER_DATABASE = [];
 
         // ==================== ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ ====================
         let currentUser = null;
@@ -1912,17 +1916,73 @@
             initWorkoutExercises();
             loadAllUsersData(); // Загружаем данные всех пользователей
             
+            // Загружаем динамическую базу пользователей
+            loadDynamicUserDatabase();
+            
             // Добавляем периодическую проверку обновлений данных
             setupAutoRefresh();
         });
+
+        // ==================== ДИНАМИЧЕСКАЯ БАЗА ПОЛЬЗОВАТЕЛЕЙ ====================
+        function loadDynamicUserDatabase() {
+            // Загружаем пользователей из localStorage
+            const savedUsers = localStorage.getItem('users');
+            if (savedUsers) {
+                try {
+                    DYNAMIC_USER_DATABASE = JSON.parse(savedUsers);
+                    console.log('Динамическая база пользователей загружена:', DYNAMIC_USER_DATABASE.length, 'пользователей');
+                } catch (e) {
+                    console.error('Ошибка загрузки динамической базы пользователей:', e);
+                    DYNAMIC_USER_DATABASE = [];
+                }
+            } else {
+                DYNAMIC_USER_DATABASE = [];
+            }
+            
+            // Сохраняем текущее состояние базы в localStorage для синхронизации
+            localStorage.setItem('dynamicUserDatabase', JSON.stringify(DYNAMIC_USER_DATABASE));
+        }
+
+        function saveDynamicUserDatabase() {
+            localStorage.setItem('users', JSON.stringify(DYNAMIC_USER_DATABASE));
+            localStorage.setItem('dynamicUserDatabase', JSON.stringify(DYNAMIC_USER_DATABASE));
+            
+            // Также сохраняем в специальное хранилище для кода
+            localStorage.setItem('userDatabaseBackup', JSON.stringify({
+                timestamp: new Date().toISOString(),
+                users: DYNAMIC_USER_DATABASE,
+                totalUsers: DYNAMIC_USER_DATABASE.length
+            }));
+        }
+
+        function syncUserDatabaseFromStorage() {
+            // Проверяем, есть ли обновления в localStorage
+            const storedUsers = localStorage.getItem('users');
+            if (storedUsers) {
+                try {
+                    const newUsers = JSON.parse(storedUsers);
+                    
+                    // Обновляем динамическую базу
+                    DYNAMIC_USER_DATABASE = newUsers;
+                    
+                    // Обновляем кэшированные данные
+                    saveDynamicUserDatabase();
+                    
+                    return true;
+                } catch (e) {
+                    console.error('Ошибка синхронизации базы пользователей:', e);
+                }
+            }
+            return false;
+        }
 
         // ==================== АВТОМАТИЧЕСКОЕ ОБНОВЛЕНИЕ ДАННЫХ ====================
         let lastUpdateTime = Date.now();
         let autoRefreshInterval = null;
 
         function setupAutoRefresh() {
-            // Проверяем обновления каждые 10 секунд
-            autoRefreshInterval = setInterval(checkForUpdates, 10000);
+            // Проверяем обновления каждые 5 секунд
+            autoRefreshInterval = setInterval(checkForUpdates, 5000);
             
             // Также проверяем при активации вкладки
             document.addEventListener('visibilitychange', function() {
@@ -1941,6 +2001,9 @@
                 reloadUpdatedData();
                 lastUpdateTime = parseInt(currentTimestamp);
             }
+            
+            // Проверяем обновления базы пользователей
+            syncUserDatabaseFromStorage();
         }
 
         function reloadUpdatedData() {
@@ -1948,6 +2011,9 @@
             
             // Перезагружаем данные пользователей
             loadAllUsersData();
+            
+            // Синхронизируем базу пользователей
+            syncUserDatabaseFromStorage();
             
             // Если текущий пользователь - админ, обновляем панель администратора
             if (currentUser && currentUser.isAdmin && document.getElementById('admin-page').classList.contains('active')) {
@@ -2068,7 +2134,7 @@
         }
 
         function loginUser(username, password) {
-            // Проверяем предустановленные аккаунты
+            // Сначала проверяем предустановленные аккаунты
             const presetAccount = PRESET_ACCOUNTS.find(acc => 
                 acc.username === username && acc.password === password
             );
@@ -2085,18 +2151,39 @@
                 };
             }
             
-            // Проверяем зарегистрированных пользователей
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            const user = users.find(u => u.username === username && u.password === password);
+            // Затем проверяем динамическую базу пользователей
+            const dynamicUser = DYNAMIC_USER_DATABASE.find(u => u.username === username && u.password === password);
             
-            if (user) {
+            if (dynamicUser) {
                 return { 
                     success: true, 
                     user: {
-                        id: user.id,
-                        username: user.username,
-                        name: user.name,
-                        isAdmin: user.isAdmin || false
+                        id: dynamicUser.id,
+                        username: dynamicUser.username,
+                        name: dynamicUser.name,
+                        isAdmin: dynamicUser.isAdmin || false
+                    }
+                };
+            }
+            
+            // Если не нашли в динамической базе, проверяем старую систему (для совместимости)
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            const legacyUser = users.find(u => u.username === username && u.password === password);
+            
+            if (legacyUser) {
+                // Добавляем этого пользователя в динамическую базу
+                if (!DYNAMIC_USER_DATABASE.some(u => u.id === legacyUser.id)) {
+                    DYNAMIC_USER_DATABASE.push(legacyUser);
+                    saveDynamicUserDatabase();
+                }
+                
+                return { 
+                    success: true, 
+                    user: {
+                        id: legacyUser.id,
+                        username: legacyUser.username,
+                        name: legacyUser.name,
+                        isAdmin: legacyUser.isAdmin || false
                     }
                 };
             }
@@ -2269,7 +2356,7 @@
                 });
             }
             
-            // Приоритет для целевых группы мышц
+            // Приоритет для целевые группы мышц
             if (formData.target.length > 0) {
                 // Сначала добавляем упражнения на целевые группы
                 const targetExercises = exercises.filter(exercise => {
@@ -2872,9 +2959,11 @@
         function updateAdminPanel() {
             if (!currentUser || !currentUser.isAdmin) return;
             
-            // Загружаем данные всех пользователей
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            const allUsers = [...PRESET_ACCOUNTS, ...users];
+            // Обновляем динамическую базу пользователей
+            loadDynamicUserDatabase();
+            
+            // Объединяем предустановленные аккаунты и динамические
+            const allUsers = [...PRESET_ACCOUNTS, ...DYNAMIC_USER_DATABASE];
             
             // Обновляем статистику
             let totalWorkouts = 0;
@@ -3069,7 +3158,11 @@
                 return;
             }
             
-            // Удаляем пользователя из списка
+            // Удаляем пользователя из динамической базы
+            DYNAMIC_USER_DATABASE = DYNAMIC_USER_DATABASE.filter(u => u.id !== userId);
+            saveDynamicUserDatabase();
+            
+            // Удаляем пользователя из старой системы (для совместимости)
             const users = JSON.parse(localStorage.getItem('users') || '[]');
             const updatedUsers = users.filter(u => u.id !== userId);
             localStorage.setItem('users', JSON.stringify(updatedUsers));
@@ -3158,18 +3251,23 @@
         }
 
         function createUser(username, password, name) {
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            // Проверяем, существует ли пользователь в предустановленных аккаунтах
+            const existingPreset = PRESET_ACCOUNTS.find(acc => acc.username === username);
+            if (existingPreset) {
+                return { success: false, message: 'Пользователь с таким логином уже существует (системный аккаунт)' };
+            }
             
-            // Проверяем, существует ли пользователь
-            const existingUser = users.find(u => u.username === username);
+            // Проверяем, существует ли пользователь в динамической базе
+            const existingUser = DYNAMIC_USER_DATABASE.find(u => u.username === username);
             if (existingUser) {
                 return { success: false, message: 'Пользователь с таким логином уже существует' };
             }
             
-            // Проверяем предустановленные аккаунты
-            const existingPreset = PRESET_ACCOUNTS.find(acc => acc.username === username);
-            if (existingPreset) {
-                return { success: false, message: 'Пользователь с таким логином уже существует (системный аккаунт)' };
+            // Проверяем, существует ли пользователь в старой системе (для совместимости)
+            const oldUsers = JSON.parse(localStorage.getItem('users') || '[]');
+            const existingOldUser = oldUsers.find(u => u.username === username);
+            if (existingOldUser) {
+                return { success: false, message: 'Пользователь с таким логином уже существует в старой системе' };
             }
             
             const newUser = {
@@ -3182,8 +3280,13 @@
                 creationDate: new Date().toISOString()
             };
             
-            users.push(newUser);
-            localStorage.setItem('users', JSON.stringify(users));
+            // Добавляем в динамическую базу
+            DYNAMIC_USER_DATABASE.push(newUser);
+            saveDynamicUserDatabase();
+            
+            // Также добавляем в старую систему (для совместимости)
+            oldUsers.push(newUser);
+            localStorage.setItem('users', JSON.stringify(oldUsers));
             
             // Инициализируем пустые данные для нового пользователя
             const initialUserData = {
@@ -3204,7 +3307,33 @@
             // Отмечаем, что данные были обновлены
             markDataAsUpdated();
             
+            // Создаем резервную копию базы пользователей для встраивания в код
+            createUserDatabaseBackup();
+            
             return { success: true, user: newUser };
+        }
+
+        function createUserDatabaseBackup() {
+            // Создаем копию базы пользователей в формате для встраивания в код
+            const backup = {
+                timestamp: new Date().toISOString(),
+                users: DYNAMIC_USER_DATABASE,
+                presetAccounts: PRESET_ACCOUNTS,
+                totalUsers: DYNAMIC_USER_DATABASE.length + PRESET_ACCOUNTS.length
+            };
+            
+            localStorage.setItem('embeddedUserDatabase', JSON.stringify(backup));
+            
+            // Также сохраняем в формате JavaScript для вставки в код
+            const jsCode = `// Динамическая база пользователей (автоматически обновляется)
+const DYNAMIC_USER_DATABASE = ${JSON.stringify(DYNAMIC_USER_DATABASE, null, 2)};
+
+// Объединенная база пользователей для аутентификации
+function getAllUsersForAuth() {
+    return [...PRESET_ACCOUNTS, ...DYNAMIC_USER_DATABASE];
+}`;
+            
+            localStorage.setItem('userDatabaseCode', jsCode);
         }
 
         // ==================== ОТОБРАЖЕНИЕ ИСТОРИИ ====================
@@ -3901,6 +4030,7 @@
                 currentUser = null;
                 userData = { workouts: [], reflections: [], questions: [] };
                 allUsersData = {};
+                DYNAMIC_USER_DATABASE = [];
                 
                 // Перезагружаем страницу
                 location.reload();
@@ -3914,10 +4044,11 @@
                 const exportData = {
                     timestamp: new Date().toISOString(),
                     exportedBy: currentUser.username,
-                    users: JSON.parse(localStorage.getItem('users') || '[]'),
+                    presetAccounts: PRESET_ACCOUNTS,
+                    dynamicUsers: DYNAMIC_USER_DATABASE,
                     allUsersData: allUsersData,
                     allQuestions: JSON.parse(localStorage.getItem('allQuestions') || '[]'),
-                    presetAccounts: PRESET_ACCOUNTS
+                    userDatabaseCode: localStorage.getItem('userDatabaseCode')
                 };
                 
                 // Создаем файл для скачивания
